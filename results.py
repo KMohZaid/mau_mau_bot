@@ -195,14 +195,31 @@ def add_call_bluff(results, game):
     )
 
 
+def get_image_url(card, can_play):
+    url = "https://github.com/jh0ker/mau_mau_bot/blob/master/images/classic_colorblind/{folder}/{card}.{ext}?raw=true"
+    ext = "webp"
+    folder = "webp" if can_play else "webp_not_playable"
+    return url.format(card=str(card), folder=folder, ext=ext)
+
+
 def add_card(game, card, results, can_play):
     """Add an option that represents a card"""
 
     if can_play:
         if game.mode != "text":
             results.append(
-                Sticker(str(card), sticker_file_id=c.STICKERS[str(card)])
-        )
+                Sticker(
+                    str(card),
+                    sticker_file_id=c.STICKERS[str(card)],
+                    input_message_content=InputTextMessageContent(
+                        "<a href='{image_url}'>{html_unicode}</a>".format(
+                            image_url=get_image_url(card, can_play),
+                            html_unicode="&#8290",
+                        ),
+                        parse_mode="html",
+                    ),
+                ),
+            )
         if game.mode == "text":
             results.append(
                 Sticker(str(card), sticker_file_id=c.STICKERS[str(card)], input_message_content=InputTextMessageContent("Card Played: {card}".format(card=repr(card).replace('Draw Four', '+4').replace('Draw', '+2').replace('Colorchooser', 'Color Chooser')))
