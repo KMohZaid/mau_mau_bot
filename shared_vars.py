@@ -21,12 +21,35 @@
 from config import TOKEN, WORKERS
 import logging
 import os
+import sqlite3
+
+from pony.orm import db_session
 from telegram.ext import Updater
 
 from game_manager import GameManager
 from database import db
 
 db.bind('sqlite', os.getenv('UNO_DB', 'uno.sqlite3'), create_db=True)
+
+# Add new column 'use_stickers' to UserSetting table if it doesn't exist
+@db_session
+def ensure_use_stickers_column():
+    conn = sqlite3.connect(os.getenv('UNO_DB', 'uno.sqlite3'))
+    cursor = conn.cursor()
+
+    # Check if 'use_stickers' column exists
+    cursor.execute("PRAGMA table_info(UserSetting);")
+    columns = [row[1] for row in cursor.fetchall()]
+
+    if 'use_stickers' not in columns:
+        # Add the column with default True
+        cursor.execute("ALTER TABLE UserSetting ADD COLUMN use_stickers BOOLEAN DEFAULT 1;")
+        conn.commit()
+
+    conn.close()
+
+ensure_use_stickers_column()
+
 db.generate_mapping(create_tables=True)
 
 gm = GameManager()

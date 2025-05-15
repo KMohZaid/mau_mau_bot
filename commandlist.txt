@@ -16,3 +16,4 @@ settings - Language and other settings
 stats - Show statistics 
 source - See source information 
 news - All news about this bot
+toggle_stickers - Toggle b/w stickers and image preview

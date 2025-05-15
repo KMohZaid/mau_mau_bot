@@ -18,8 +18,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-from telegram import ReplyKeyboardMarkup, Update
-from telegram.ext import CommandHandler, Filters, MessageHandler, CallbackContext
+from telegram import (InlineKeyboardButton, InlineKeyboardMarkup,
+                      ReplyKeyboardMarkup, Update)
+from telegram.ext import (CallbackContext, CommandHandler, Filters,
+                          MessageHandler)
 
 from utils import send_async
 from user_setting import UserSetting
@@ -27,6 +29,56 @@ from shared_vars import dispatcher
 from locales import available_locales
 from internationalization import _, user_locale
 
+@user_locale
+def toggle_stickers(update: Update, context: CallbackContext):
+    """Ask for confirmation to toggle stickers/image previews"""
+    user_id = update.message.from_user.id
+    us = UserSetting.get(id=user_id)
+
+    if not us:
+        us = UserSetting(id=user_id)
+
+    if us.use_stickers:
+        text = _("Currently using:\n✅ Stickers\n❌ Image previews\n\nDo you want to switch to image previews?")
+    else:
+        text = _("Currently using:\n❌ Stickers\n✅ Image previews\n\nDo you want to switch to stickers?")
+
+    keyboard = [
+        [InlineKeyboardButton(_("Yes, switch"), callback_data="use_stickers_confirm")],
+        [InlineKeyboardButton(_("Cancel"), callback_data="use_stickers_cancel")]
+
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    send_async(
+        context.bot,
+        update.message.chat.id,
+        text=text,
+        reply_markup=reply_markup
+    )
+
+@user_locale
+def toggle_stickers_confirm(update: Update, context: CallbackContext):
+    """Handles the confirmation to toggle the setting"""
+    query = update.callback_query
+    user_id = query.from_user.id
+    us = UserSetting.get(id=user_id)
+
+    # Ensure that user himself is clicking the button
+    # TODO
+
+    if query.data == "use_stickers_confirm":
+        us.use_stickers = not us.use_stickers
+        if us.use_stickers:
+            text = _("Switched to using stickers!")
+        else:
+            text = _("Switched to using image previews!")
+    else:
+        text = _("Cancelled.")
+
+    query.answer()
+    query.edit_message_text(text=text)
 
 @user_locale
 def show_settings(update: Update, context: CallbackContext):
@@ -96,6 +148,7 @@ def locale_select(update: Update, context: CallbackContext):
         _.pop()
 
 def register():
+    dispatcher.add_handler(CommandHandler("toggle_stickers", toggle_stickers))
     dispatcher.add_handler(CommandHandler('settings', show_settings))
     dispatcher.add_handler(MessageHandler(Filters.regex('^([' + '📊' +
                                                         '🌍' +

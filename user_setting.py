@@ -31,3 +31,4 @@ class UserSetting(db.Entity):
     games_played = Optional(int, default=0)  # Nr. of games completed
     cards_played = Optional(int, default=0)  # Nr. of cards played total
     use_keyboards = Optional(bool, default=False)  # Use keyboards (unused)
+    use_stickers = Optional(bool, default=True)  # Use stickers when play, instead of image preview

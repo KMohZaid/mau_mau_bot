@@ -202,8 +202,18 @@ def get_image_url(card, can_play):
     return url.format(card=str(card), folder=folder, ext=ext)
 
 
-def add_card(game, card, results, can_play):
+def add_card(game, card, results, can_play, user_setting):
     """Add an option that represents a card"""
+
+    input_message_content = None
+    if not user_setting.use_stickers:
+        input_message_content=InputTextMessageContent(
+            "<a href='{image_url}'>{html_unicode}</a>".format(
+                image_url=get_image_url(card, can_play),
+                html_unicode="&#8290",
+            ),
+            parse_mode="html",
+        )
 
     if can_play:
         if game.mode != "text":
@@ -211,13 +221,7 @@ def add_card(game, card, results, can_play):
                 Sticker(
                     str(card),
                     sticker_file_id=c.STICKERS[str(card)],
-                    input_message_content=InputTextMessageContent(
-                        "<a href='{image_url}'>{html_unicode}</a>".format(
-                            image_url=get_image_url(card, can_play),
-                            html_unicode="&#8290",
-                        ),
-                        parse_mode="html",
-                    ),
+                    input_message_content=input_message_content,
                 ),
             )
         if game.mode == "text":

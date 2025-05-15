@@ -28,6 +28,7 @@ from telegram.ext.dispatcher import run_async
 
 import card as c
 import settings
+from user_setting import UserSetting
 import simple_commands
 from actions import do_skip, do_play_card, do_draw, do_call_bluff, start_player_countdown
 from config import WAITING_TIME, DEFAULT_GAMEMODE, MIN_PLAYERS
@@ -283,6 +284,12 @@ def kick_player(update: Update, context: CallbackContext):
                   .format(name=game.starter.first_name),
                   reply_to_message_id=update.message.message_id)
 
+
+def callback_query_handler(update: Update, context: CallbackContext):
+    if update.callback_query.data.startswith('use_stickers_'):
+        return settings.toggle_stickers_confirm(update, context)
+
+    select_game(update, context)
 
 def select_game(update: Update, context: CallbackContext):
     """Handler for callback queries to select the current game"""
@@ -619,14 +626,14 @@ def reply_to_query(update: Update, context: CallbackContext):
                 for card in sorted(player.cards):
                     add_card(game, card, results,
                              can_play=(card in playable and
-                                            str(card) not in added_ids))
+                                            str(card) not in added_ids), user_setting=UserSetting.get(id=user_id))
                     added_ids.append(str(card))
 
                 add_gameinfo(game, results)
 
         elif user_id != game.current_player.user.id or not game.started:
             for card in sorted(player.cards):
-                add_card(game, card, results, can_play=False)
+                add_card(game, card, results, can_play=False, user_setting=UserSetting.get(id=user_id))
 
         else:
             add_gameinfo(game, results)
@@ -719,7 +726,7 @@ def reset_waiting_time(bot, player):
 # Add all handlers to the dispatcher and run the bot
 dispatcher.add_handler(InlineQueryHandler(reply_to_query))
 dispatcher.add_handler(ChosenInlineResultHandler(process_result, pass_job_queue=True))
-dispatcher.add_handler(CallbackQueryHandler(select_game))
+dispatcher.add_handler(CallbackQueryHandler(callback_query_handler))
 dispatcher.add_handler(CommandHandler('start', start_game, pass_args=True, pass_job_queue=True))
 dispatcher.add_handler(CommandHandler('new', new_game))
 dispatcher.add_handler(CommandHandler('kill', kill_game))
